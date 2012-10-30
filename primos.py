@@ -26,37 +26,20 @@ from time import time
 from math import *
 from pprint import pprint
 from mysql_conn import Numbers_db
+from util import t_convert, n_format
 
+#Preparativos
 numbers = Numbers_db() #Se crea el enlace y esas cosas
 agegados = 0
 
-def t_convert(tiempo):
-    """Convierte un tiempo en milisegundos a una hora legible"""
-    if tiempo == float('inf'):
-        return "un chingo"
-    segs = int(tiempo)
-    milis = int((tiempo-segs)*1000)
-    min = [0, segs/60][segs>60]
-    segs = segs%60
-    horas = [0, min/60][min>60]
-    min = min%60
-    dias = [0, horas/24][horas>24]
-    horas = horas%60
-    s = ""
-    if dias:
-        s += "%d días "%dias
-    if horas:
-        s += "%d horas "%horas
-    if min:
-        s += "%d minutos "%min
-    if segs:
-        s += "%d segundos "%segs
-    if milis:
-        s += "%d milésimas"%milis
-    if s:
-        return s
-    else:
-        return "nada"
+print "cargando lista de primos..."
+ini = time()
+primos = [num for id, num in numbers.get_all()]
+fin = time()
+id, num = numbers.get_biggest()
+print "me ha tomado", t_convert(fin-ini), "cargar la lista de primos con", n_format(id), "numeros"
+del ini
+del fin
 
 def inf(n = float('inf')):
     """iterador infinito"""
@@ -68,10 +51,14 @@ def inf(n = float('inf')):
 def is_prime(num):
     """Determina si el número dado es primo según una búsqueda en la
     base de datos"""
-    for id, p in numbers.get_lower_than(sqrt(num)):
+    prime = True
+    for p in primos:
         if num%p == 0:
+            prime = False
             break
-    else: #Ningun primo lo dividio, es primo
+        if p>sqrt(num):
+            break
+    if prime:
         return True
     return False
 
@@ -117,21 +104,6 @@ def factor(num):
                 factores.update({p:1})
     return factores
 
-def n_format(num):
-    """Da formato a un número para ser expuesto"""
-    num = str(num)
-    s = ""
-    j = 0
-    for i in xrange(len(num)):
-        pos = len(num)-(i+1)
-        s = num[pos] + s
-        if j%3==2:
-            s = ','+s
-        j+=1
-    if s.startswith(','):
-        s = s[1:]
-    return s
-
 def human(fact, exp="^"):
     """Toma un diccionario de factores y lo hace legible"""
     s = ""
@@ -140,42 +112,45 @@ def human(fact, exp="^"):
     return s[:-1]
 
 if __name__ == '__main__':
-    op = raw_input("Desea?\n\tcalcular numeros [C],\n\tfactorizar un numero[F],\n\tver las estadísticas[E]\nopcion: ")
-    op = op.lower()
-    if op=='c':
-        n_primes = raw_input("Cuántos primos nuevos quieres? ")
-        if n_primes == 'inf':
-            n_primes = float('inf')
+    while True:
+        op = raw_input("Desea?\n\tcalcular numeros [C],\n\tfactorizar un numero[F],\n\tver las estadísticas[E],\n\tSalir[Q]\nopcion: ")
+        op = op.lower()
+        if op=='c':
+            n_primes = raw_input("Cuántos primos nuevos quieres? ")
+            if n_primes == 'inf':
+                n_primes = float('inf')
+            else:
+                n_primes = int(n_primes)
+            ini = time()
+            try:
+                seek_primes(n_primes)
+            except KeyboardInterrupt:
+                print "ok, terminamos antes..."
+            end = time()
+            print "Agregados", agregados, "en", t_convert(end-ini)
+            id, num = numbers.get_biggest()
+            print "El mas grande es ", n_format(num), "con el indice", n_format(id), "de", n_format(len(str(num))), "cifras"
+        elif op == 'e':#ver las estadísticas
+            ini = time()
+            next_prime()
+            fin = time()
+            id, num = numbers.get_biggest()
+            print "El número primo más grande calculado es", n_format(num), "con el índice", n_format(id)
+            print "El número máximo que puedo factorizar con presición es", n_format(num*2)
+            print "El número más grande del que puedo determinar primalidad es", n_format(num**2)
+            print "Me toma", t_convert(fin-ini), "calcular un primo"
+        elif op == 'f':
+            id, num = numbers.get_biggest()
+            print "Recuerda que el número más grande que puedo factorizar es", n_format(num*2)
+            num = input("Numero a factorizar: ")
+            ini = time()
+            print "Los factores de", num, "son", human(factor(num), '**')
+            fin = time()
+            print "Me tomó", t_convert(fin-ini), "hacer esta factorización"
+        elif op=='t': #test
+            print is_prime(input("Numero: "))
+        elif op=='q':
+            break
         else:
-            n_primes = int(n_primes)
-        ini = time()
-        try:
-            seek_primes(n_primes)
-        except KeyboardInterrupt:
-            print "ok, terminamos antes..."
-        end = time()
-        print "Agregados", agregados, "en", t_convert(end-ini)
-        id, num = numbers.get_biggest()
-        print "El mas grande es ", n_format(num), "con el indice", n_format(id), "de", n_format(len(str(num))), "cifras"
-    elif op == 'e':#ver las estadísticas
-        ini = time()
-        next_prime()
-        fin = time()
-        id, num = numbers.get_biggest()
-        print "El número primo más grande calculado es", n_format(num), "con el índice", n_format(id)
-        print "El número máximo que puedo factorizar con presición es", n_format(num*2)
-        print "El número más grande del que puedo determinar primalidad es", n_format(num**2)
-        print "Me toma", t_convert(fin-ini), "calcular un primo"
-    elif op == 'f':
-        id, num = numbers.get_biggest()
-        print "Recuerda que el número más grande que puedo factorizar es", n_format(num*2)
-        num = input("Numero a factorizar: ")
-        ini = time()
-        print "Los factores de", num, "son", human(factor(num), '**')
-        fin = time()
-        print "Me tomó", t_convert(fin-ini), "hacer esta factorización"
-    elif op=='t': #test
-        print t_convert(input("Numero: "))
-    else:
-        print "Nada que hacer.."
+            print "Nada que hacer.."
 
