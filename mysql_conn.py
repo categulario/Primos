@@ -64,6 +64,9 @@ class Numbers_db(object):
         resultado = self.cursor.fetchone()
         return resultado
 
+    def get_between(self, a, b):
+        pass
+
     def get_lower_than(self, n):
         """Hace una búsqueda de los números primos menores que n"""
         self.num_rows = self.cursor.execute(self.get_lower_than_query%n)

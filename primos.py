@@ -84,7 +84,7 @@ def seek_primes(how_many):
             ini = time()
         while True:
             num += 2
-            if is_prime(num):#Es primo, lo imprimimos e insertamos en la base de datos
+            if is_prime(num):#Es primo, lo insertamos en la base de datos
                 numbers.new(num)
                 break
         if i == 0:
@@ -95,7 +95,7 @@ def seek_primes(how_many):
 def factor(num):
     """Factoriza el número dado"""
     factores = dict()
-    for id, p in numbers.get_lower_than(num/2):
+    for id, p in numbers.get_lower_than(num):
         while num%p==0:
             num = num/p
             if factores.has_key(p):
@@ -152,5 +152,5 @@ if __name__ == '__main__':
         elif op=='q':
             break
         else:
-            print "Nada que hacer.."
+            print "nada que hacer"
 
